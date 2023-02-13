@@ -20,7 +20,7 @@ New API Documentation [Wildberries REST API Documentation](https://suppliers-api
 Via Composer:
 
 ```bash
-composer require Leonid74/wildberries-api-php
+composer require jumas-cola/wildberries-api-php
 ```
 
 ### Usage
@@ -110,7 +110,7 @@ This software is distributed under the [BSD 3-Clause license](./LICENSE) terms.
 Через Composer:
 
 ```bash
-composer require Leonid74/wildberries-api-php
+composer require jumas-cola/wildberries-api-php
 ```
 
 ### Использование

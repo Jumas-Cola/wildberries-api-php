@@ -102,7 +102,7 @@ class WbApiClient implements WbApiInterface
      *
      * @var string
      */
-    private $apiUrl = 'https://suppliers-stats.wildberries.ru/api/v1/supplier';
+    private $apiUrl = 'https://statistics-api.wildberries.ru/api/v1/supplier';
 
     /**
      * Partner Token

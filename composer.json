@@ -1,5 +1,5 @@
 {
-  "name": "leonid74/wildberries-api-php",
+  "name": "jumas-cola/wildberries-api-php",
   "type": "library",
   "description": "Wildberries REST API statistics client library with throttling requests",
   "keywords": [
@@ -12,7 +12,7 @@
     "stat",
     "statistics"
   ],
-  "homepage": "https://github.com/leonid74/wildberries-api-php",
+  "homepage": "https://github.com/Jumas-Cola/wildberries-api-php",
   "license": "BSD-3-Clause",
   "authors": [
     {
@@ -22,7 +22,7 @@
     }
   ],
   "require": {
-    "php": ">=7.4",
+    "php": ">=7.4 || ^8.0",
     "ext-curl": "*",
     "ext-json": "*",
     "josantonius/httpstatuscode": "^1.1.6"
