@@ -129,10 +129,10 @@ class WbApiClient implements WbApiInterface
      *
      * @throws Exception
      */
-    public function __construct( ?string $token = '', string $dateFrom = null )
+    public function __construct(?string $token = '', string $dateFrom = null)
     {
-        if ( empty( $token ) ) {
-            throw new Exception( 'The Token is not specified' );
+        if (empty($token)) {
+            throw new Exception('The Token is not specified');
         }
 
         $this->token = $token;
@@ -167,7 +167,7 @@ class WbApiClient implements WbApiInterface
      *
      * @return string
      */
-    public function setDateFrom( string $dateFrom = null ): WbApiClient
+    public function setDateFrom(string $dateFrom = null): WbApiClient
     {
         $this->dateFrom = $dateFrom;
 
@@ -184,88 +184,91 @@ class WbApiClient implements WbApiInterface
      *
      * @return stdClass
      */
-    protected function sendRequest( string $path, string $method = 'GET', array $data = [] )
+    protected function sendRequest(string $path, string $method = 'GET', array $data = [])
     {
-        if ( empty( $this->token ) ) {
-            return $this->handleError( 'The Token is not specified' );
+        if (empty($this->token)) {
+            return $this->handleError('The Token is not specified');
         }
-        if ( !isset( $data['dateFrom'] ) ) {
-            return $this->handleError( 'The dateFrom parameter is not specified' );
+        if (!isset($data['dateFrom'])) {
+            return $this->handleError('The dateFrom parameter is not specified');
         }
 
-        $data['dateFrom'] = date( DATE_RFC3339, strtotime( $data['dateFrom'] ) );
-        $data['dateTo'] = date( DATE_RFC3339, strtotime( isset( $data['dateTo'] ) ? $data['dateTo'] : 'now' ) );
+        $data['dateFrom'] = date(DATE_RFC3339, strtotime($data['dateFrom']));
+        $data['dateTo'] = date(DATE_RFC3339, strtotime(isset($data['dateTo']) ? $data['dateTo'] : 'now'));
         $data['key'] = $this->token;
         $url = $this->apiUrl . '/' . $path;
-        $method = strtoupper( $method );
-        $headers = [ 'Content-Type: application/json' ];
+        $method = strtoupper($method);
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $this->token
+        ];
 
         $this->curl = curl_init();
 
-        switch ( $method ) {
+        switch ($method) {
             case 'POST':
-                curl_setopt( $this->curl, CURLOPT_POST, true );
-                curl_setopt( $this->curl, CURLOPT_POSTFIELDS, http_build_query( $data ) );
+                curl_setopt($this->curl, CURLOPT_POST, true);
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($data));
                 break;
             case 'PUT':
-                curl_setopt( $this->curl, CURLOPT_CUSTOMREQUEST, 'PUT' );
-                curl_setopt( $this->curl, CURLOPT_POSTFIELDS, http_build_query( $data ) );
+                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, 'PUT');
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($data));
                 break;
             case 'DELETE':
-                curl_setopt( $this->curl, CURLOPT_CUSTOMREQUEST, 'DELETE' );
-                curl_setopt( $this->curl, CURLOPT_POSTFIELDS, http_build_query( $data ) );
+                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, 'DELETE');
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($data));
                 break;
             default:
-                if ( !empty( $data ) ) {
-                    $url .= '?' . http_build_query( $data );
+                if (!empty($data)) {
+                    $url .= '?' . http_build_query($data);
                 }
         }
 
-        curl_setopt( $this->curl, CURLOPT_URL, $url );
-        curl_setopt( $this->curl, CURLOPT_SSL_VERIFYPEER, false );
-        curl_setopt( $this->curl, CURLOPT_SSL_VERIFYHOST, false );
-        curl_setopt( $this->curl, CURLOPT_RETURNTRANSFER, true );
-        curl_setopt( $this->curl, CURLOPT_HEADER, true );
-        curl_setopt( $this->curl, CURLOPT_CONNECTTIMEOUT, $this->curlConnectTimeout );
-        curl_setopt( $this->curl, CURLOPT_TIMEOUT, $this->curlTimeout );
+        curl_setopt($this->curl, CURLOPT_URL, $url);
+        curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($this->curl, CURLOPT_HEADER, true);
+        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->curlConnectTimeout);
+        curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->curlTimeout);
 
         $this->requestCounter++;
 
         // Print the url and headers of the request
         // Выводим url и заголовки запроса
-        $this->debug( "[{$this->requestCounter}] ===> REQUEST {$method} {$url}", self::DEBUG_URL );
-        if ( !empty( $headers ) ) {
-            curl_setopt( $this->curl, CURLOPT_HTTPHEADER, $headers );
-            $this->debug( "[{$this->requestCounter}] ===> REQUEST HEADERS:\n" . var_export( $headers, true ), self::DEBUG_HEADERS );
+        $this->debug("[{$this->requestCounter}] ===> REQUEST {$method} {$url}", self::DEBUG_URL);
+        if (!empty($headers)) {
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, $headers);
+            $this->debug("[{$this->requestCounter}] ===> REQUEST HEADERS:\n" . var_export($headers, true), self::DEBUG_HEADERS);
         }
 
         $response = $this->throttleCurl();
-        $deltaTime = sprintf( '%0.4f', microtime( true ) - $this->lastRequestTime );
+        $deltaTime = sprintf('%0.4f', microtime(true) - $this->lastRequestTime);
 
-        $curlErrors = curl_error( $this->curl );
-        $curlInfo = curl_getinfo( $this->curl );
+        $curlErrors = curl_error($this->curl);
+        $curlInfo = curl_getinfo($this->curl);
         $ipAddress = $curlInfo['primary_ip'];
         $header_size = $curlInfo['header_size'];
         $headerCode = $curlInfo['http_code'];
-        $responseHeaders = trim( substr( $response, 0, $header_size ) );
-        $responseBodyRaw = substr( $response, $header_size );
-        $responseBody = json_decode( $responseBodyRaw );
-        if ( json_last_error() !== JSON_ERROR_NONE ) {
+        $responseHeaders = trim(substr($response, 0, $header_size));
+        $responseBodyRaw = substr($response, $header_size);
+        $responseBody = json_decode($responseBodyRaw);
+        if (json_last_error() !== JSON_ERROR_NONE) {
             $responseBody = $responseBodyRaw;
         }
-        unset( $response, $responseBodyRaw );
+        unset($response, $responseBodyRaw);
 
-        curl_close( $this->curl );
+        curl_close($this->curl);
 
         // Print the headers of the request again
         // Выводим еще заголовки запроса
-        if ( isset( $curlInfo['request_header'] ) ) {
-            $this->debug( "[{$this->requestCounter}] ===> REQUEST HEADERS:\n" . $curlInfo['request_header'], self::DEBUG_HEADERS );
+        if (isset($curlInfo['request_header'])) {
+            $this->debug("[{$this->requestCounter}] ===> REQUEST HEADERS:\n" . $curlInfo['request_header'], self::DEBUG_HEADERS);
         }
 
         // Print the request parameters
         // Выводим параметры запроса
-        $this->debug( "[{$this->requestCounter}] ===> REQUEST PARAMS:\n" . var_export( $data, true ), self::DEBUG_CONTENT );
+        $this->debug("[{$this->requestCounter}] ===> REQUEST PARAMS:\n" . var_export($data, true), self::DEBUG_CONTENT);
 
         $retval = new stdClass();
         $retval->data = $responseBody;
@@ -274,13 +277,13 @@ class WbApiClient implements WbApiInterface
         $retval->ip = $ipAddress;
         $retval->curlErrors = $curlErrors;
         $retval->method = $method . ':' . $url;
-        $retval->timestamp = date( DATE_RFC3339 );
+        $retval->timestamp = date(DATE_RFC3339);
 
         // Print the url, headers and the result of the response
         // Выводим url, заголовки и результат ответа
-        $this->debug( "[{$this->requestCounter}] <=== RESPONSE TIME IN {$deltaTime}s (CODE: {$headerCode})", self::DEBUG_URL );
-        $this->debug( "[{$this->requestCounter}] <=== RESPONSE HEADERS:\n{$responseHeaders}", self::DEBUG_HEADERS );
-        $this->debug( "[{$this->requestCounter}] <=== RESPONSE RESULT:\n" . var_export( ['info' => $curlInfo, 'result' => $this->handleResult( $retval )], true ), self::DEBUG_CONTENT );
+        $this->debug("[{$this->requestCounter}] <=== RESPONSE TIME IN {$deltaTime}s (CODE: {$headerCode})", self::DEBUG_URL);
+        $this->debug("[{$this->requestCounter}] <=== RESPONSE HEADERS:\n{$responseHeaders}", self::DEBUG_HEADERS);
+        $this->debug("[{$this->requestCounter}] <=== RESPONSE RESULT:\n" . var_export(['info' => $curlInfo, 'result' => $this->handleResult($retval)], true), self::DEBUG_CONTENT);
 
         return $retval;
     }
@@ -294,32 +297,32 @@ class WbApiClient implements WbApiInterface
     private function throttleCurl()
     {
         do {
-            if ( empty( $this->throttle ) ) {
+            if (empty($this->throttle)) {
                 break;
             }
 
             // Calculate the required delay time before sending the request, microseconds
             // Вычисляем необходимое время задержки перед отправкой запроса, микросекунды
-            $usleep = (int)( 1E6 * ( $this->lastRequestTime + 1 / $this->throttle - microtime( true ) ) );
-            if ( $usleep <= 0 ) {
+            $usleep = (int)(1E6 * ($this->lastRequestTime + 1 / $this->throttle - microtime(true)));
+            if ($usleep <= 0) {
                 break;
             }
 
-            $sleep = sprintf( '%0.4f', $usleep / 1E6 );
-            $this->debug( "[{$this->requestCounter}] +++++ THROTTLE REQUEST (" . $this->throttle . "/sec) {$sleep}'s +++++", self::DEBUG_URL );
-            usleep( $usleep );
-        } while ( false );
+            $sleep = sprintf('%0.4f', $usleep / 1E6);
+            $this->debug("[{$this->requestCounter}] +++++ THROTTLE REQUEST (" . $this->throttle . "/sec) {$sleep}'s +++++", self::DEBUG_URL);
+            usleep($usleep);
+        } while (false);
 
         do {
-            $this->lastRequestTime = microtime( true );
-            $response = curl_exec( $this->curl );
+            $this->lastRequestTime = microtime(true);
+            $response = curl_exec($this->curl);
 
-            $oneMoreTry = curl_getinfo( $this->curl, CURLINFO_RESPONSE_CODE ) == 429;
-            if ( $oneMoreTry ) {
-                $this->debug( "[{$this->requestCounter}] +++++ TOO MANY REQUESTS, WAITING 0.5sec +++++", self::DEBUG_URL );
-                usleep( 500000 );
+            $oneMoreTry = curl_getinfo($this->curl, CURLINFO_RESPONSE_CODE) == 429;
+            if ($oneMoreTry) {
+                $this->debug("[{$this->requestCounter}] +++++ TOO MANY REQUESTS, WAITING 0.5sec +++++", self::DEBUG_URL);
+                usleep(500000);
             }
-        } while ( $oneMoreTry );
+        } while ($oneMoreTry);
 
         return $response;
     }
@@ -333,9 +336,9 @@ class WbApiClient implements WbApiInterface
      *
      * @return void
      */
-    protected function debug( string $message, int $callerLogLevel = 999 ): void
+    protected function debug(string $message, int $callerLogLevel = 999): void
     {
-        if ( $this->debugLevel >= $callerLogLevel ) {
+        if ($this->debugLevel >= $callerLogLevel) {
             echo $message . PHP_EOL;
         }
     }
@@ -348,17 +351,17 @@ class WbApiClient implements WbApiInterface
      *
      * @return stdClass
      */
-    protected function handleResult( $data )
+    protected function handleResult($data)
     {
-        if ( empty( $data->data ) ) {
+        if (empty($data->data)) {
             $data->data = new stdClass();
         }
-        if ( !in_array( $data->http_code, $this->successStatusCodes ) || isset( $data->data->errors ) ) {
+        if (!in_array($data->http_code, $this->successStatusCodes) || isset($data->data->errors)) {
             $data->data->is_error = true;
-            if ( !isset( $data->data->errors ) ) {
-                $data->data->errors[] = HTTPStatusCode::get( $data->http_code );
+            if (!isset($data->data->errors)) {
+                $data->data->errors[] = HTTPStatusCode::get($data->http_code);
             }
-            if ( !empty( $data->curlErrors ) ) {
+            if (!empty($data->curlErrors)) {
                 $data->data->errors[] = $data->curlErrors;
             }
             $data->data->http_code = $data->http_code;
@@ -379,11 +382,11 @@ class WbApiClient implements WbApiInterface
      *
      * @return stdClass
      */
-    protected function handleError( ?string $customMessage = null )
+    protected function handleError(?string $customMessage = null)
     {
         $message = new stdClass();
         $message->is_error = true;
-        if ( null !== $customMessage ) {
+        if (null !== $customMessage) {
             $message->message = $customMessage;
         }
 
@@ -402,12 +405,12 @@ class WbApiClient implements WbApiInterface
      *
      * @return stdClass
      */
-    public function incomes( string $dateFrom = null )
+    public function incomes(string $dateFrom = null)
     {
         $data = ['dateFrom' => $dateFrom ?? $this->dateFrom ?? null];
-        $requestResult = $this->sendRequest( 'incomes', 'GET', $data );
+        $requestResult = $this->sendRequest('incomes', 'GET', $data);
 
-        return $this->handleResult( $requestResult );
+        return $this->handleResult($requestResult);
     }
 
     /**
@@ -418,12 +421,12 @@ class WbApiClient implements WbApiInterface
      *
      * @return stdClass
      */
-    public function stocks( string $dateFrom = null )
+    public function stocks(string $dateFrom = null)
     {
         $data = ['dateFrom' => $dateFrom ?? $this->dateFrom ?? null];
-        $requestResult = $this->sendRequest( 'stocks', 'GET', $data );
+        $requestResult = $this->sendRequest('stocks', 'GET', $data);
 
-        return $this->handleResult( $requestResult );
+        return $this->handleResult($requestResult);
     }
 
     /**
@@ -435,16 +438,16 @@ class WbApiClient implements WbApiInterface
      *
      * @return stdClass
      */
-    public function orders( string $dateFrom = null, int $flag = 0 )
+    public function orders(string $dateFrom = null, int $flag = 0)
     {
-        if ( $flag < 0 || $flag > 1 ) {
-            return $this->handleError( 'The flag value must be 0 or 1' );
+        if ($flag < 0 || $flag > 1) {
+            return $this->handleError('The flag value must be 0 or 1');
         }
 
         $data = ['dateFrom' => $dateFrom ?? $this->dateFrom ?? null, 'flag' => $flag];
-        $requestResult = $this->sendRequest( 'orders', 'GET', $data );
+        $requestResult = $this->sendRequest('orders', 'GET', $data);
 
-        return $this->handleResult( $requestResult );
+        return $this->handleResult($requestResult);
     }
 
     /**
@@ -456,16 +459,16 @@ class WbApiClient implements WbApiInterface
      *
      * @return stdClass
      */
-    public function sales( string $dateFrom = null, int $flag = 0 )
+    public function sales(string $dateFrom = null, int $flag = 0)
     {
-        if ( $flag < 0 || $flag > 1 ) {
-            return $this->handleError( 'The flag value must be 0 or 1' );
+        if ($flag < 0 || $flag > 1) {
+            return $this->handleError('The flag value must be 0 or 1');
         }
 
         $data = ['dateFrom' => $dateFrom ?? $this->dateFrom ?? null, 'flag' => $flag];
-        $requestResult = $this->sendRequest( 'sales', 'GET', $data );
+        $requestResult = $this->sendRequest('sales', 'GET', $data);
 
-        return $this->handleResult( $requestResult );
+        return $this->handleResult($requestResult);
     }
 
     /**
@@ -479,12 +482,12 @@ class WbApiClient implements WbApiInterface
      *
      * @return stdClass
      */
-    public function reportDetailByPeriod( string $dateFrom = null, string $dateTo = null, int $limit = 100, int $rrdid = 0 )
+    public function reportDetailByPeriod(string $dateFrom = null, string $dateTo = null, int $limit = 100, int $rrdid = 0)
     {
         $data = ['dateFrom' => $dateFrom ?? $this->dateFrom ?? null, 'dateTo' => $dateTo, 'limit' => $limit, 'rrdid' => $rrdid];
-        $requestResult = $this->sendRequest( 'reportDetailByPeriod', 'GET', $data );
+        $requestResult = $this->sendRequest('reportDetailByPeriod', 'GET', $data);
 
-        return $this->handleResult( $requestResult );
+        return $this->handleResult($requestResult);
     }
 
     /**
@@ -495,11 +498,11 @@ class WbApiClient implements WbApiInterface
      *
      * @return stdClass
      */
-    public function exciseGoods( string $dateFrom = null )
+    public function exciseGoods(string $dateFrom = null)
     {
         $data = ['dateFrom' => $dateFrom ?? $this->dateFrom ?? null];
-        $requestResult = $this->sendRequest( 'exciseGoods', 'GET', $data );
+        $requestResult = $this->sendRequest('exciseGoods', 'GET', $data);
 
-        return $this->handleResult( $requestResult );
+        return $this->handleResult($requestResult);
     }
 }
