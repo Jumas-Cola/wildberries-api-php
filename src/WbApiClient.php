@@ -17,7 +17,7 @@ namespace Leonid74\Wildberries;
 
 use Exception;
 use stdClass;
-use Josantonius\HTTPStatusCode\HTTPStatusCode;
+use Josantonius\HttpStatusCode\HttpStatusCode;
 
 class WbApiClient implements WbApiInterface
 {
@@ -359,7 +359,8 @@ class WbApiClient implements WbApiInterface
         if (!in_array($data->http_code, $this->successStatusCodes) || isset($data->data->errors)) {
             $data->data->is_error = true;
             if (!isset($data->data->errors)) {
-                $data->data->errors[] = HTTPStatusCode::get($data->http_code);
+                $statusCodeInstance = new HttpStatusCode();
+                $data->data->errors[] = $statusCodeInstance->getMessage($data->http_code);
             }
             if (!empty($data->curlErrors)) {
                 $data->data->errors[] = $data->curlErrors;
